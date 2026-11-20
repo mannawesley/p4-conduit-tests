@@ -1,0 +1,3 @@
+Task: First use the playwright-test-planner agent to plan tests for the profile page and following an author. Save the plan as specs/profile-follow.md. Then use the playwright-test-generator agent to write one test for each scenario in the plan, in the folder tests/profile-follow/.
+Material: Start on the page /profile/practice-author. For steps that need a signed-in user, use a practice user from README.md.
+Rules: Plan at most 2 short scenarios, with at most 5 steps each. Do not change any other test file. Do not run the test suite. After following the author, reload the page and check that the button shows "Unfollow" and the follower count went up by one, not only that the click worked.
