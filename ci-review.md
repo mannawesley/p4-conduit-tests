@@ -42,23 +42,31 @@ Rules: Use actions/checkout@v6, actions/setup-node@v6 and actions/upload-artifac
   - Line 33: take it from the playwright-report folder, where Playwright writes the HTML report.
 
 ## 5. The first run on GitHub
-- **Run:** Add the CI workflow · **Result:** … · **Tests:** …
-- **The report (artifact):** …
+- **Run:** Add the CI workflow · **Result:** green · **Tests:** 22 passed (4.9s)
+- **The report (artifact):** yes, playwright-report is under Artifacts
+- **Before it ran:** the first push was refused ("refusing to allow an OAuth App to create or update workflow ... without `workflow` scope"). Fixed with `gh auth refresh -h github.com -s workflow`, then `git push`.
 
 ## 6. A red run on purpose
 - **The change:** `tests/example.spec.ts` line 6, `toBe(200)` → `toBe(201)`
-- **My prediction:** …
-- **What GitHub showed:** …
+- **My prediction:** "Run Playwright tests" turns red. Line 6 expects 201, but a GET of `/api/tags` returns 200. So the error says Expected: 201, Received: 200. Line 8 never runs, the test stops at the first failed check. The steps before it stay green, and "Keep the HTML report" still runs because of `!cancelled()`, so the report is there to download. GitHub shows a red cross next to the commit.
+- **What GitHub showed:** Expected: 201 · Received: 200
 
 ## 7. Fixed, and green again
-- **The fix:** line 6 back to `toBe(200)` · **Run:** Fix the expected status · **Result:** …
+- **The fix:** line 6 back to `toBe(200)` · **Run:** Fix the expected status · **Result:** 22 passed (4.4s)
 
 ## 8. Review notes for my other AI-written tests (written while CI ran)
 The API checklist: status · body · shape · negative cases (a refused request changes nothing) · own test data.
 Monday's and Tuesday's tests that I did not review in depth on those days. Each one: kept, changed or removed, and why.
 
 ### Monday: `tests/api.spec.ts`
-- …
+- "create an article returns 201 with the sent values and the token user as author": **changed**, because it checks 201 and the values, but never reads the article again. Add a GET by slug to prove it was really saved.
+- "read an article by slug returns 200 with the saved values": **kept**, because own article, checks 200 and every saved value.
+- "delete an article returns 204 with no body, then the article is not found": **kept**, because checks 204 and empty body, then reads again and gets 404, so the delete really happened.
+- "create an article with no token returns 401 token is missing": **changed**, because a refused create must save nothing. Add a check that no article with that title exists (for example, list articles and search for its unique title). Making no user is fine here, it needs no token.
+- "read an article that does not exist returns 404 article not found": **kept**, because checks 404 and the whole error. It needs no user, just a slug that surely doesn't exist (a unique random one).
+- "delete an article with a wrong token returns 401 token is invalid": **changed**, because a refused delete must change nothing. Add a GET of the article after the 401 and check it still returns 200 with the same values.
 
 ### Tuesday: `tests/contract.spec.ts`
-- …
+- "GET /api/user answers with the User shape from API.md": **kept**, because own user, checks 200 and the full shape (exact keys, types, nulls). A new user really has bio and image null, so that check is fair.
+- "GET /api/user with no token gives 401 "is missing"": **kept**, because checks 401 and the whole error. It's a GET, so there's nothing to change and no read-back needed. No user is fine, it needs no token.
+- "GET /api/user with a wrong token gives 401 "is invalid"": **kept**, because same as 2: 401, whole error, and a refused GET changes nothing. No user needed, just a wrong token.
